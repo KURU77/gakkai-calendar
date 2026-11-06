@@ -23,6 +23,24 @@ const MEETING_WORD = /学会|大会|年会|学術集会|学術講演|講演会|�
 const OVERSEAS = /韓国|台湾|米国|アメリカ|ドイツ|フランス|英国|イギリス|イタリア|スペイン|シンガポール|ベトナム|オーストラリア|カナダ|ハワイ|マレーシア|インドネシア|フィリピン|オランダ|スイス|オーストリア|ソウル|釜山|台北|高雄|上海|北京|香港|バンコク|ロンドン|パリ|ウィーン|ベルリン|ニューヨーク|サンフランシスコ|シカゴ|ボストン|シドニー|メルボルン|Korea|Taiwan|USA|U\.S\.A|Germany|France|Italy|Spain|China|Thailand|Singapore|Canada|Australia|Hawaii|\bUK\b/;
 
 // ---- 分野（上から順に判定）
+const PRIORITY = [
+  ['soc', '政治・国際', /移民政策|選挙学会|グローバル・ガバナンス/],
+  ['soc', '社会学・福祉', /NPO学会/],
+  ['soc', '経済学', /金融・証券|ジャフィー/],
+  ['hum', '歴史・考古', /民衆史/],
+  ['edu', '心理学', /ワーキングメモリ/],
+  ['info', '情報・通信', /情報通信学会|情報コミュニケーション学会/],
+  ['eng', 'その他の工学', /計算工学|塗料|MRS|衝撃波|スターリング|空気清浄|海洋工学シンポ/],
+  ['sci', '地球科学', /極域科学/],
+  ['sci', '化学', /ペプチド/],
+  ['life', '農学・獣医', /家禽/],
+  ['life', '食品', /ビタミン|食育/],
+  ['eng', '化学工学・環境', /環境科学会/],
+  ['med', '血液・免疫・感染', /アフェレシス/],
+  ['med', '循環器', /脈管/],
+  ['sci', '神経科学', /神経科学|神経化学|神経回路|脳科学|脳と心|ニューロサイエンス|Neuroscience|味と匂/],
+  ['info', 'VR・ヒューマンインタフェース', /バーチャルリアリティ|VR学会|メタバース|ヒューマンインタ[ーフ]|インタラクション|HCG|コンピュータグラフィックス|Visual Computing|ゲーム学/i],
+];
 const RULES = [
   ['dent', '歯学', /歯(?!車)|口腔|顎|咬合|補綴|インプラント/],
   ['pharm', '薬学', /薬学|薬剤|医薬品|薬物動態|TDM|臨床薬|医療薬|生薬|創薬|薬理|製剤|くすり/],
@@ -41,24 +59,29 @@ const RULES = [
   ['soc', '経営・会計', /経営|会計|マーケティング|組織学会|商業|ファイナンス|労務|観光/],
   ['soc', '社会学・福祉', /社会学|社会福祉|地域福祉|社会政策|メディア学会|マス・コミュニケーション|ジェンダー|人類学|民俗|社会情報/],
   ['soc', '地理・都市', /人文地理|日本地理学|地理学会|都市学|地域学/],
-  ['hum', '言語・文学', /言語学|日本語学|語学|語用論|言語科学|文学|英文|独文|仏文|国語|音声学|通訳|翻訳|比較文/],
-  ['hum', '哲学・宗教', /哲学|倫理|宗教|美学|思想/],
+  ['hum', '言語・文学', /言語学|日本語学|語学|語用論|言語科学|(?<!天)文学|英文|独文|仏文|国語|音声学|通訳|翻訳|比較文/],
+  ['hum', '哲学・宗教', /哲学|倫理|宗教|美学|思想|科学基礎論/],
   ['hum', '歴史・考古', /歴史|(?<!環境)史学|考古|日本史|西洋史|東洋史/],
   ['hum', '芸術・デザイン', /音楽学|美術|演劇|映像学|(?<!腸内|エコ|材料)デザイン|芸術|映画/],
   ['eng', '建築・土木', /建築|土木|都市計画|地盤|コンクリート|構造工学|橋梁|トンネル|防災|地震工学|耐震|空気調和|衛生工学|水環境|廃棄物|自然災害/],
   ['eng', '機械・ロボット', /機械学会|機械|ロボット|精密工学|自動車|トライボロジー|伝熱|流体|ターボ|塑性加工|溶接|計測自動制御|制御|振動|生産|設計工学|可視化|ガスタービン/],
-  ['eng', '電気・電子', /電気学会|電気|電子|半導体|照明|磁気|プラズマ|超電導|超伝導|パワーエレ|エレクトロニクス|光学|レーザ/],
-  ['eng', '材料・金属', /材料|マテリアル|金属|鉄鋼|セラミック|高分子|ゴム|繊維|表面|腐食|防食|複合|ガラス|粉体|粉末|顕微鏡|炭素|薄膜|真空/],
-  ['eng', '化学工学・エネルギー', /化学工学|エネルギー|原子力|電池|水素|燃料|石油|燃焼|触媒|環境工学|資源|ガス/],
-  ['eng', '航空宇宙・船舶', /航空|宇宙工学|宇宙技術|ロケット|船舶|海洋工学|造船|交通|鉄道/],
+  ['eng', '物理工学・量子・光', /応用物理|物理工学|量子|ナノ|光学|光学会|レーザ|フォトニ|超電導|超伝導|磁気|スピントロ|低温工学|薄膜|真空|表面科学/],
+  ['eng', '電気・電子', /電気学会|電気|電子|半導体|照明|パワーエレ|エレクトロニクス|実装/],
+  ['eng', '材料・金属', /材料|マテリアル|金属|鉄鋼|セラミック|高分子|ゴム|繊維|腐食|防食|複合|ガラス|粉体|粉末|顕微鏡|炭素|接着|溶射|成形加工|希土類/],
+  ['eng', '原子力・核融合', /原子力|核融合|放射線|保健物理|フュージョン|プラズマ/],
+  ['eng', 'エネルギー', /エネルギー|電池|水素|燃料|石油|燃焼|太陽光|風力|地熱|伝熱|熱物性|ガスタービン/],
+  ['eng', '化学工学・環境', /化学工学|触媒|環境工学|資源|分離|膜学会|イオン交換|溶媒抽出/],
+  ['eng', '宇宙工学', /航空宇宙|宇宙工学|宇宙技術|宇宙科学技術|ロケット|衛星|宇宙輸送|宇宙太陽|宇宙開発|マイクログラビティ|宇宙利用/],
+  ['eng', '航空・船舶・交通', /航空|船舶|海洋工学|造船|交通|鉄道|ITS/],
   ['eng', '人間工学・医工学', /人間工学|生体医工学|医工学|医用|感性工学|福祉工学|ライフサポート|バイオメカニズム/],
   ['life', '農学・獣医', /(?<!経済|業)農学|農業(?!経済)|農芸|作物|育種|園芸|畜産|獣医|森林|林学|水産|土壌|造園|肥料|植物病理|応用動物|昆虫|雑草|草地|造園|蚕糸|木材/],
   ['life', '食品', /食品|栄養・食糧|調理|醸造|食物繊維|栄養学|食生活|家政/],
-  ['life', '生物学', /(?<!古)生物|生化学|分子生物|細胞生物|ゲノム|遺伝学|進化|生態|動物学|植物|微生物|発生|バイオ|タンパク質|蛋白質|酵素|糖質|脂質|生理学会|霊長類|哺乳類|鳥学|魚類/],
+  ['life', '生物学', /(?<!古)生物|育種|生態学|生化学|分子生物|細胞生物|ゲノム|遺伝学|進化|生態|動物学|植物|微生物|発生|バイオ|タンパク質|蛋白質|酵素|糖質|脂質|生理学会|霊長類|哺乳類|鳥学|魚類/],
   ['sci', '数学・統計', /数学|統計|応用数理|計算力学|オペレーションズ/],
   ['sci', '物理学', /物理|高圧|熱測定|放射光|中性子|加速器|結晶|分光/],
   ['sci', '化学', /(?<![硬老])化学|イオン液体|吸着|ゼオライト|希土類|酸化反応|錯体|有機|無機|質量分析|コロイド|界面|クロマトグラフィー|光化学/],
-  ['sci', '地球・宇宙', /地質|地球|古生物|地震|火山|気象|海洋|天文|測地|測位|活断層|物理探査|古生物|第四紀|地熱|リモートセンシング|雪氷|水文|陸水|地形|鉱物/],
+  ['sci', '宇宙・天文', /天文|宇宙線|宇宙物理|宇宙科学|宇宙生物|惑星|太陽系|銀河|重力波|ブラックホール/],
+  ['sci', '地球科学', /地質|地球|古生物|地震|火山|気象|海洋|測地|測位|活断層|物理探査|第四紀|リモートセンシング|雪氷|水文|陸水|地形|鉱物/],
 ];
 const MED = [
   ['がん・腫瘍', /がん|癌|腫瘍|肉腫|骨髄腫|リンパ腫|乳腺|緩和/],
@@ -83,6 +106,10 @@ const MEDICAL_HINT = /医学|医療|臨床|診療|内科|外科|疾患|病|治�
 
 const STRONG_MED = /医学|医療|臨床|診療|内科|外科|疾患/;
 const FIRST = new Set(['dent', 'pharm', 'nurse']);
+function byPriority(text) {
+  for (const [f, sf, re] of PRIORITY) if (re.test(text)) return [f, sf];
+  return null;
+}
 function byRules(text, only) {
   for (const [f, sf, re] of RULES) if (only(f) && re.test(text)) return [f, sf];
   return null;
@@ -92,6 +119,8 @@ function byMed(text) {
   return null;
 }
 function classifyText(text, medical) {
+  const p = byPriority(text);
+  if (p) return p;
   const first = byRules(text, (f) => FIRST.has(f));
   if (first) return first;
   // 医学系カレンダー由来や臨床の語を含むものは、医学の語彙を先に当てる
@@ -102,8 +131,16 @@ function classify(name, org, src, area) {
   const medical = src === 'igaku' || area === '医学関連';
   const r = classifyText(name, medical) || (org ? classifyText(org, medical) : null);
   if (r) return r;
-  if (medical || STRONG_MED.test(name)) return ['med', 'その他の医学'];
+  if (/安全工学/.test(name)) return ['eng', 'その他の工学'];
+  if (/沙漠/.test(name)) return ['sci', '地球科学'];
+  if (/福祉教育|ボランティア/.test(name)) return ['soc', '社会学・福祉'];
+  if (/ゲーミング/.test(name)) return ['soc', 'その他'];
+  const late = byMed(name);
+  if (late) return late;
+  if (medical || STRONG_MED.test(name) || /健康学会/.test(name)) return ['med', 'その他の医学'];
   if (src === 'saisachi') return ['life', '生物学'];
+  if (src === 'jps') return ['sci', '物理学'];
+  if (src === 'kuroshio') return ['hum', '言語・文学'];
   if (src === 'kagaku' || area === '理学・工学') return ['eng', 'その他の工学'];
   return ['soc', 'その他'];
 }
@@ -189,6 +226,8 @@ const sources = [
   parseJams(),
   read('igaku').map((e) => ({ ...e, name: clean(e.name), startOnly: true })),
   read('saisachi'),
+  read('kuroshio'),
+  read('jps'),
   read('kagaku'),
   read('kore').map(parseKore).filter(Boolean),
 ];
@@ -237,8 +276,25 @@ const events = kept.map((e) => {
   return o;
 }).sort((a, b) => (a.s < b.s ? -1 : a.s > b.s ? 1 : a.n < b.n ? -1 : 1));
 
+// 学会一覧: 公式サイトが開けて、ページに学会名が載っていることを確認できたものだけ
+const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
+const socSeen = new Map();
+const addSoc = (n, u, src) => {
+  const name = clean(z2h(n).replace(/^(一般|公益)(社団|財団)法人\s*|^特定非営利活動法人\s*|^NPO法人\s*/, ''));
+  if (!/(学会|協会|学協会|研究会|学会連合)$/.test(name) || /^第?\d|^(日本)?学術会議/.test(name) || name.length < 4) return;
+  if (/創価学会|サザエさん|うんこ|もったいない|BPCNP|ブレインサイエンス協会/.test(name)) return;
+  const h = hostOf(u);
+  if (!h || socSeen.has(h) || [...socSeen.values()].some((x) => x.n === name)) return;
+  const [f, sf] = classify(name, '', src, '');
+  socSeen.set(h, { n: name, u, f, sf });
+};
+for (const [n, u] of read('jams_soc')) addSoc(n, u, 'igaku');
+for (const [n, u, st, ok] of [...read('crawl3_status'), ...read('crawl4_status')]) if (st === 200 && ok) addSoc(n, u, '');
+const societies = [...socSeen.values()].sort((a, b) => a.n.localeCompare(b.n, 'ja'));
+console.log('societies', societies.length, societies.reduce((m, e) => ((m[e.f] = (m[e.f] || 0) + 1), m), {}));
+
 const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-fs.writeFileSync(path.join(here, '..', 'events.json'), JSON.stringify({ updated: today, events }));
+fs.writeFileSync(path.join(here, '..', 'events.json'), JSON.stringify({ updated: today, events, societies }));
 const by = (k) => events.reduce((m, e) => ((m[e[k]] = (m[e[k]] || 0) + 1), m), {});
 console.log(stat);
 console.log('events', events.length, 'upcoming', events.filter((e) => e.e >= today).length);

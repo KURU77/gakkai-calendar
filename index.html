@@ -74,6 +74,10 @@ main{padding:12px 0 40px}
 .icon.on{color:var(--star)}
 .icon.done{color:var(--c-life)}
 .more{display:block;margin:18px auto;min-width:220px}
+.note{color:var(--sub);font-size:13.5px;margin:8px 0}
+.socgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:2px 16px;padding:4px 0}
+.soc{padding:7px 2px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--soft);font-size:14px}
+.soc:hover{color:var(--accent);text-decoration:underline}
 .empty{padding:50px 10px;text-align:center;color:var(--sub)}
 /* 月表示 */
 .calhead{display:flex;align-items:center;gap:8px;margin:6px 0 10px}
@@ -132,7 +136,7 @@ footer p{margin:4px 0}
     <div class="chips sub" id="subs" role="group" aria-label="細分野" hidden></div>
     <div class="bar">
       <span class="seg" role="group" aria-label="表示">
-        <button id="vList" aria-pressed="true">リスト</button><button id="vCal" aria-pressed="false">月</button>
+        <button id="vList" aria-pressed="true">リスト</button><button id="vCal" aria-pressed="false">月</button><button id="vSoc" aria-pressed="false">学会</button>
       </span>
       <select id="type" aria-label="種別"></select>
       <select id="region" aria-label="地域"></select>
@@ -190,7 +194,7 @@ function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 var stars=load('gc.stars',{}), exported=load('gc.exported',{}), custom=load('gc.custom',[]);
 var st=load('gc.view',{view:'list',field:'',sub:''});
 st.q='';st.type='';st.region='';st.star=false;st.past=false;
-var data=[], all=[], shown=PAGE;
+var data=[], all=[], socs=[], shown=PAGE;
 var now=new Date();
 var today=ymd(now);
 var cur={y:now.getFullYear(),m:now.getMonth()}, selDay=null;
@@ -235,8 +239,17 @@ function filtered(){
   });
 }
 
+function socOk(e){
+  if(!st.q)return true;
+  var hay=(e.n+' '+e.sf).toLowerCase(),ws=st.q.toLowerCase().split(/\s+/);
+  for(var i=0;i<ws.length;i++)if(ws[i]&&hay.indexOf(ws[i])<0)return false;
+  return true;
+}
+function socFiltered(){
+  return socs.filter(function(e){return socOk(e)&&(!st.field||e.f===st.field)&&(!st.sub||e.sf===st.sub);});
+}
 function renderChips(){
-  var pool=all.filter(function(e){return timeOk(e)&&baseFilter(e);});
+  var pool=st.view==='soc'?socs.filter(socOk):all.filter(function(e){return timeOk(e)&&baseFilter(e);});
   var cnt={},total=pool.length; pool.forEach(function(e){cnt[e.f]=(cnt[e.f]||0)+1;});
   var h='<button class="chip" data-f="" aria-pressed="'+(!st.field)+'">すべて <span class="n">'+total+'</span></button>';
   FIELDS.forEach(function(f){
@@ -282,6 +295,17 @@ function renderList(list){
   if(list.length>shown)h+='<button class="btn more" id="more">さらに表示（残り '+(list.length-shown)+' 件）</button>';
   $('main').innerHTML=h;
 }
+function renderSoc(list){
+  if(!list.length){$('main').innerHTML='<div class="empty">条件に合う学会はありません。</div>';return;}
+  var g={},order=[];
+  list.forEach(function(e){var k=(FNAME[e.f]||'')+(e.sf&&e.sf!==FNAME[e.f]?'／'+e.sf:'');if(!g[k]){g[k]=[];order.push(k);}g[k].push(e);});
+  order.sort();
+  $('main').innerHTML='<p class="note">大会日程が未発表、または未収録の学会も探せる一覧です。学会名を押すと公式サイトが開きます。</p>'+order.map(function(k){
+    return '<div class="month-h">'+esc(k)+'（'+g[k].length+'）</div><div class="socgrid">'+g[k].map(function(e){
+      return '<a class="soc" href="'+esc(safeUrl(e.u))+'" target="_blank" rel="noopener">'+esc(e.n)+' ↗</a>';
+    }).join('')+'</div>';
+  }).join('');
+}
 function eventsByDay(list,from,to){
   var map={};
   list.forEach(function(e){
@@ -321,11 +345,13 @@ function renderCal(list){
 }
 function render(){
   renderChips();
-  var list=filtered();
-  $('count').textContent=list.length+'件 表示中';
+  var list=st.view==='soc'?socFiltered():filtered();
+  $('count').textContent=list.length+(st.view==='soc'?'学会 表示中':'件 表示中');
+  $('vSoc').setAttribute('aria-pressed',st.view==='soc');
+  ['type','region'].forEach(function(id){$(id).disabled=st.view==='soc';});
   $('vList').setAttribute('aria-pressed',st.view==='list');
   $('vCal').setAttribute('aria-pressed',st.view==='cal');
-  if(st.view==='cal')renderCal(list);else renderList(list);
+  if(st.view==='soc')renderSoc(list);else if(st.view==='cal')renderCal(list);else renderList(list);
   save('gc.view',{view:st.view,field:st.field,sub:st.sub});
 }
 
@@ -367,8 +393,9 @@ $('type').addEventListener('change',function(){st.type=this.value;shown=PAGE;ren
 $('region').addEventListener('change',function(){st.region=this.value;shown=PAGE;render();});
 $('star').addEventListener('change',function(){st.star=this.checked;shown=PAGE;render();});
 $('past').addEventListener('change',function(){st.past=this.checked;shown=PAGE;render();});
-$('vList').addEventListener('click',function(){st.view='list';render();});
-$('vCal').addEventListener('click',function(){st.view='cal';render();});
+$('vList').addEventListener('click',function(){st.view='list';st.sub='';render();});
+$('vCal').addEventListener('click',function(){st.view='cal';st.sub='';render();});
+$('vSoc').addEventListener('click',function(){st.view='soc';st.sub='';render();});
 $('ics').addEventListener('click',function(){
   var list=all.filter(function(e){return stars[e.id]&&(e.e||e.s)>=today;});
   if(!list.length){toast('★を付けた今後の大会がありません');return;}
@@ -429,8 +456,8 @@ $('type').innerHTML='<option value="">種別：すべて</option>'+TYPES.map(fun
 $('region').innerHTML='<option value="">地域：すべて</option>'+REGIONS.map(function(t){return '<option>'+t+'</option>';}).join('');
 $('dlgField').innerHTML=FIELDS.map(function(f){return '<option value="'+f[0]+'">'+f[1]+'</option>';}).join('');
 fetch('events.json').then(function(r){return r.json();}).then(function(j){
-  data=j.events;merge();
-  $('updated').textContent='データ更新日：'+j.updated+'／収録 '+j.events.length+' 件';
+  data=j.events;socs=j.societies||[];merge();
+  $('updated').textContent='データ更新日：'+j.updated+'／大会 '+j.events.length+' 件・学会 '+socs.length+' 件';
   render();
 }).catch(function(){$('main').innerHTML='<div class="empty">データを読み込めませんでした。通信状態を確認してください。</div>';});
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
