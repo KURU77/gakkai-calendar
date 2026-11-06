@@ -1,0 +1,16 @@
+{
+  "name": "学会大会カレンダー",
+  "short_name": "学会カレンダー",
+  "description": "日本国内の学会大会を分野別に探し、公式ページへ移動できるカレンダー。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F4EE",
+  "theme_color": "#F6F4EE",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

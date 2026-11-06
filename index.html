@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学会大会カレンダー</title>
+<meta name="description" content="日本国内の学会大会を分野別に探せるカレンダー。大会名から公式ページへ直接移動できます。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="学会カレンダー">
+<meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181D" media="(prefers-color-scheme: dark)">
+<style>
+:root{
+  --bg:#F6F4EE; --panel:#FFFFFF; --ink:#1D2433; --sub:#5C6474; --line:#DEDACF; --soft:#ECE9E0;
+  --accent:#1F4E79; --accent-ink:#FFFFFF; --star:#B7791F; --today:#FBE9C6;
+  --c-med:#B4403A; --c-dent:#C2628A; --c-pharm:#8A5A2B; --c-nurse:#D0703C; --c-life:#3F7D4E;
+  --c-sci:#2C6E9B; --c-eng:#4C5C8C; --c-info:#6B4FA0; --c-hum:#8C6D1F; --c-soc:#1E7C7C; --c-edu:#A0527E;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#16181D; --panel:#1F2228; --ink:#E9E7E1; --sub:#A2A7B3; --line:#343842; --soft:#2A2E36;
+    --accent:#7FB2DE; --accent-ink:#10202F; --star:#E5B45A; --today:#4A3D1E;
+    --c-med:#E58A84; --c-dent:#E59CBB; --c-pharm:#CFA478; --c-nurse:#EBA77F; --c-life:#85C795;
+    --c-sci:#7DB9E0; --c-eng:#A3B1DE; --c-info:#BBA3E6; --c-hum:#D9BE6E; --c-soc:#74C7C7; --c-edu:#DDA0C4;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI","Noto Sans JP",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+button,select,input{font:inherit;color:inherit}
+a{color:var(--accent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+header.top{padding:20px 0 8px}
+.titlerow{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font:600 24px/1.3 "Hiragino Mincho ProN","Yu Mincho",serif;margin:0;letter-spacing:.02em}
+.count{color:var(--sub);font-size:13px}
+.searchrow{display:flex;gap:8px;margin-top:12px}
+.searchrow input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.btn{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel);cursor:pointer;font-size:13.5px;display:flex;align-items:center;gap:6px}
+.chip .n{color:var(--sub);font-size:12px}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed=true] .n{color:inherit;opacity:.75}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--c,var(--sub))}
+.sub .chip{font-size:12.5px;padding:3px 10px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.bar select{padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);max-width:150px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:7px 14px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.check{display:inline-flex;gap:5px;align-items:center;font-size:13.5px;cursor:pointer}
+.spacer{flex:1}
+main{padding:12px 0 40px}
+.month-h{font:600 16px/1.4 "Hiragino Mincho ProN","Yu Mincho",serif;margin:22px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+.ev{display:grid;grid-template-columns:104px 1fr auto;gap:4px 12px;padding:10px 4px;border-bottom:1px solid var(--soft);align-items:start}
+.ev .date{font-variant-numeric:tabular-nums;font-size:13.5px;color:var(--sub);line-height:1.5}
+.ev .date b{color:var(--ink);font-weight:600}
+.ev .name{font-weight:600;line-height:1.45;text-decoration:none;color:var(--ink);word-break:break-word}
+.ev .name:hover{color:var(--accent);text-decoration:underline}
+.ev .name::after{content:" ↗";color:var(--accent);font-weight:400;font-size:.85em}
+.linkkind{color:var(--star)}
+.ev .meta{font-size:12.5px;color:var(--sub);margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 10px;align-items:center}
+.tag{display:inline-flex;align-items:center;gap:4px}
+.acts{display:flex;gap:2px}
+.icon{width:36px;height:36px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--sub);font-size:17px;line-height:1}
+.icon:hover{background:var(--soft)}
+.icon.on{color:var(--star)}
+.icon.done{color:var(--c-life)}
+.more{display:block;margin:18px auto;min-width:220px}
+.empty{padding:50px 10px;text-align:center;color:var(--sub)}
+/* 月表示 */
+.calhead{display:flex;align-items:center;gap:8px;margin:6px 0 10px}
+.calhead h2{font:600 19px/1.3 "Hiragino Mincho ProN","Yu Mincho",serif;margin:0 6px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--line);gap:1px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.dow{background:var(--soft);text-align:center;font-size:12px;padding:3px 0;color:var(--sub)}
+.day{background:var(--panel);min-height:112px;padding:3px;min-width:0;cursor:pointer;border:0;text-align:left;display:block;width:100%}
+.day.out{background:var(--bg);opacity:.55}
+.day.today{background:var(--today)}
+.day.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.day .d{font-size:12.5px;font-variant-numeric:tabular-nums;display:flex;justify-content:space-between;padding:0 2px}
+.day .d .c{color:var(--sub);font-size:11px}
+.sun .d>span:first-child{color:var(--c-med)} .sat .d>span:first-child{color:var(--c-sci)}
+.pill{display:block;font-size:11.5px;line-height:1.35;padding:1px 4px 1px 6px;margin-top:2px;border-left:3px solid var(--c);background:var(--soft);border-radius:2px;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill:hover{background:var(--line)}
+.morepill{font-size:11px;color:var(--accent);padding:1px 4px}
+.dots{display:none;gap:2px;flex-wrap:wrap;margin-top:3px;padding:0 2px}
+.dots .dot{width:6px;height:6px}
+.daylist h3{font-size:15px;margin:18px 0 2px}
+/* ダイアログ */
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);width:min(520px,calc(100vw - 32px));padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 10px;font-size:17px}
+.form{display:grid;gap:10px}
+.form label{display:grid;gap:3px;font-size:13px;color:var(--sub)}
+.form input,.form select{padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dlgacts{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:calc(100vw - 32px)}
+footer{color:var(--sub);font-size:12.5px;padding:18px 0 34px;border-top:1px solid var(--line)}
+footer p{margin:4px 0}
+@media (max-width:680px){
+  .ev{grid-template-columns:1fr auto}
+  .ev .date{grid-column:1/2}
+  .ev .body{grid-column:1/2}
+  .ev .acts{grid-column:2;grid-row:1/3;flex-direction:column}
+  .day{min-height:58px}
+  .pill,.morepill{display:none}
+  .dots{display:flex}
+  .bar select{max-width:128px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="titlerow">
+      <h1>学会大会カレンダー</h1>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="searchrow">
+      <input id="q" type="search" placeholder="学会名・大会名・会場で検索" aria-label="学会名・大会名・会場で検索">
+      <button class="btn" id="add">＋追加</button>
+    </div>
+    <div class="chips" id="fields" role="group" aria-label="分野"></div>
+    <div class="chips sub" id="subs" role="group" aria-label="細分野" hidden></div>
+    <div class="bar">
+      <span class="seg" role="group" aria-label="表示">
+        <button id="vList" aria-pressed="true">リスト</button><button id="vCal" aria-pressed="false">月</button>
+      </span>
+      <select id="type" aria-label="種別"></select>
+      <select id="region" aria-label="地域"></select>
+      <label class="check"><input type="checkbox" id="star"> ★のみ</label>
+      <label class="check"><input type="checkbox" id="past"> 終了分も</label>
+      <span class="spacer"></span>
+      <button class="btn" id="ics" title="★を付けた大会をカレンダーへ">★をカレンダーへ</button>
+    </div>
+  </header>
+  <main id="main"></main>
+  <footer>
+    <p id="updated"></p>
+    <p>日程・会場は変更されることがあります。参加の前に必ず公式ページで確認してください。</p>
+    <p>大会名を押すと公式ページが開きます。大会ページが分からないものは、学会サイトまたは検索結果が開き、その旨を表示しています。</p>
+    <p>全学会を網羅しているわけではありません。見つからない大会は「＋追加」で自分用に登録できます。</p>
+  </footer>
+</div>
+
+<dialog id="dlg">
+  <form class="form" id="form" method="dialog">
+    <h2 id="dlgTitle">大会を追加</h2>
+    <label>大会名<input name="n" required maxlength="120"></label>
+    <div class="two">
+      <label>開始日<input name="s" type="date" required></label>
+      <label>終了日<input name="e" type="date"></label>
+    </div>
+    <label>公式ページのURL<input name="u" type="url" required placeholder="https://"></label>
+    <label>会場<input name="v" maxlength="80"></label>
+    <label>分野<select name="f" id="dlgField"></select></label>
+    <div class="dlgacts">
+      <button class="btn" type="button" id="dlgDel" hidden>削除</button>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="dlgCancel">やめる</button>
+      <button class="btn primary" type="submit">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+'use strict';
+var FIELDS=[
+ ['med','医学・医療'],['dent','歯学'],['pharm','薬学'],['nurse','看護・医療技術'],['life','生命科学・農学'],
+ ['sci','理学'],['eng','工学'],['info','情報・AI'],['hum','人文学'],['soc','社会科学'],['edu','教育・心理・スポーツ']
+];
+var FNAME={}; FIELDS.forEach(function(f){FNAME[f[0]]=f[1];});
+var TYPES=['全国大会','地方会・支部','研究会・シンポジウム','国際会議'];
+var REGIONS=['北海道・東北','関東','中部','近畿','中国・四国','九州・沖縄','オンライン'];
+var WD=['日','月','火','水','木','金','土'];
+var PAGE=150;
+
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+var stars=load('gc.stars',{}), exported=load('gc.exported',{}), custom=load('gc.custom',[]);
+var st=load('gc.view',{view:'list',field:'',sub:''});
+st.q='';st.type='';st.region='';st.star=false;st.past=false;
+var data=[], all=[], shown=PAGE;
+var now=new Date();
+var today=ymd(now);
+var cur={y:now.getFullYear(),m:now.getMonth()}, selDay=null;
+
+var $=function(id){return document.getElementById(id);};
+function ymd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+function p2(n){return (n<10?'0':'')+n;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function safeUrl(u){return /^https?:\/\//i.test(u||'')?u:'#';}
+function parse(s){var a=s.split('-');return new Date(+a[0],+a[1]-1,+a[2]);}
+function dateLabel(e){
+  var a=parse(e.s),b=parse(e.e||e.s);
+  var t='<b>'+(a.getMonth()+1)+'/'+a.getDate()+'</b>（'+WD[a.getDay()]+'）';
+  if((e.e||e.s)!==e.s){
+    t+='〜'+((a.getMonth()===b.getMonth())?'':(b.getMonth()+1)+'/')+b.getDate()+'（'+WD[b.getDay()]+'）';
+  }else if(e.x){t+='〜';}
+  return t;
+}
+function toast(m){var o=document.querySelector('.toast');if(o)o.remove();var t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove();},2600);}
+
+function merge(){
+  all=data.concat(custom.map(function(c){return Object.assign({mine:1,t:'全国大会',sf:'',r:''},c);}));
+  all.sort(function(a,b){return a.s<b.s?-1:a.s>b.s?1:(a.n<b.n?-1:1);});
+}
+function baseFilter(e){
+  if(st.type&&e.t!==st.type)return false;
+  if(st.region&&e.r!==st.region)return false;
+  if(st.star&&!stars[e.id])return false;
+  if(st.q){
+    var hay=(e.n+' '+(e.o||'')+' '+(e.v||'')+' '+(e.sf||'')).toLowerCase();
+    var ws=st.q.toLowerCase().split(/\s+/);
+    for(var i=0;i<ws.length;i++) if(ws[i]&&hay.indexOf(ws[i])<0) return false;
+  }
+  return true;
+}
+function timeOk(e){return st.past||st.view==='cal'||(e.e||e.s)>=today;}
+function filtered(){
+  return all.filter(function(e){
+    if(st.field&&e.f!==st.field)return false;
+    if(st.sub&&e.sf!==st.sub)return false;
+    return timeOk(e)&&baseFilter(e);
+  });
+}
+
+function renderChips(){
+  var pool=all.filter(function(e){return timeOk(e)&&baseFilter(e);});
+  var cnt={},total=pool.length; pool.forEach(function(e){cnt[e.f]=(cnt[e.f]||0)+1;});
+  var h='<button class="chip" data-f="" aria-pressed="'+(!st.field)+'">すべて <span class="n">'+total+'</span></button>';
+  FIELDS.forEach(function(f){
+    h+='<button class="chip" data-f="'+f[0]+'" aria-pressed="'+(st.field===f[0])+'"><span class="dot" style="--c:var(--c-'+f[0]+')"></span>'+f[1]+' <span class="n">'+(cnt[f[0]]||0)+'</span></button>';
+  });
+  $('fields').innerHTML=h;
+  var on=$('fields').querySelector('[aria-pressed=true]');if(on)$('fields').scrollLeft=Math.max(0,on.offsetLeft-$('fields').offsetLeft-16);
+  var sub=$('subs');
+  if(!st.field){sub.hidden=true;sub.innerHTML='';return;}
+  var sc={}; pool.forEach(function(e){if(e.f===st.field&&e.sf)sc[e.sf]=(sc[e.sf]||0)+1;});
+  var keys=Object.keys(sc).sort(function(a,b){return sc[b]-sc[a];});
+  if(!keys.length){sub.hidden=true;sub.innerHTML='';return;}
+  sub.hidden=false;
+  sub.innerHTML='<button class="chip" data-s="" aria-pressed="'+(!st.sub)+'">全部</button>'+keys.map(function(k){
+    return '<button class="chip" data-s="'+esc(k)+'" aria-pressed="'+(st.sub===k)+'">'+esc(k)+' <span class="n">'+sc[k]+'</span></button>';
+  }).join('');
+}
+
+function evHTML(e){
+  var isStar=!!stars[e.id];
+  var meta=[];
+  meta.push('<span class="tag"><span class="dot" style="--c:var(--c-'+e.f+')"></span>'+esc(e.sf||FNAME[e.f]||'')+'</span>');
+  if(e.t&&e.t!=='全国大会')meta.push('<span>'+esc(e.t)+'</span>');
+  if(e.v)meta.push('<span>'+esc(e.v)+'</span>');
+  if(e.l==='s')meta.push('<span class="linkkind">学会サイトへ移動（大会ページは未確認）</span>');
+  if(e.l==='q')meta.push('<span class="linkkind">公式ページ不明・検索で開く</span>');
+  if(e.x)meta.push('<span>終了日は公式で確認</span>');
+  if(e.mine)meta.push('<span>自分で追加</span>');
+  return '<div class="ev"><div class="date">'+dateLabel(e)+'</div>'+
+   '<div class="body"><a class="name" href="'+esc(safeUrl(e.u))+'" target="_blank" rel="noopener">'+esc(e.n)+'</a><div class="meta">'+meta.join('')+'</div></div>'+
+   '<div class="acts"><button class="icon'+(isStar?' on':'')+'" data-star="'+esc(e.id)+'" aria-pressed="'+isStar+'" aria-label="★を付ける" title="★を付ける">'+(isStar?'★':'☆')+'</button>'+
+   (e.mine?'<button class="icon" data-edit="'+esc(e.id)+'" aria-label="編集" title="編集">✎</button>':'<button class="icon'+(exported[e.id]?' done':'')+'" data-ics="'+esc(e.id)+'" aria-label="カレンダーへ追加" title="'+(exported[e.id]?'カレンダーへ書き出し済み':'カレンダーへ追加')+'">'+(exported[e.id]?'✓':'＋')+'</button>')+
+   '</div></div>';
+}
+function renderList(list){
+  if(!list.length){$('main').innerHTML='<div class="empty">条件に合う大会はありません。<br>絞り込みを減らすか、「＋追加」で登録してください。</div>';return;}
+  var h='',last='';
+  list.slice(0,shown).forEach(function(e){
+    var m=e.s.slice(0,7);
+    if(m!==last){last=m;h+='<div class="month-h">'+m.slice(0,4)+'年'+(+m.slice(5))+'月</div>';}
+    h+=evHTML(e);
+  });
+  if(list.length>shown)h+='<button class="btn more" id="more">さらに表示（残り '+(list.length-shown)+' 件）</button>';
+  $('main').innerHTML=h;
+}
+function eventsByDay(list,from,to){
+  var map={};
+  list.forEach(function(e){
+    var a=e.s,b=e.e||e.s;
+    if(b<from||a>to)return;
+    var d=parse(a<from?from:a),end=parse(b>to?to:b),guard=0;
+    while(d<=end&&guard++<40){var k=ymd(d);(map[k]=map[k]||[]).push(e);d.setDate(d.getDate()+1);}
+  });
+  return map;
+}
+function renderCal(list){
+  var first=new Date(cur.y,cur.m,1),start=new Date(cur.y,cur.m,1-first.getDay());
+  var last=new Date(cur.y,cur.m+1,0),cells=Math.ceil((first.getDay()+last.getDate())/7)*7;
+  var endD=new Date(start);endD.setDate(start.getDate()+cells-1);
+  var map=eventsByDay(list,ymd(start),ymd(endD));
+  var h='<div class="calhead"><button class="btn" id="prev" aria-label="前の月">‹</button><h2>'+cur.y+'年'+(cur.m+1)+'月</h2><button class="btn" id="next" aria-label="次の月">›</button><button class="btn" id="thism">今月</button></div><div class="grid">';
+  WD.forEach(function(w){h+='<div class="dow">'+w+'</div>';});
+  for(var i=0;i<cells;i++){
+    var d=new Date(start);d.setDate(start.getDate()+i);
+    var k=ymd(d),evs=map[k]||[];
+    var cls='day'+(d.getMonth()!==cur.m?' out':'')+(k===today?' today':'')+(k===selDay?' sel':'')+(d.getDay()===0?' sun':d.getDay()===6?' sat':'');
+    h+='<div class="'+cls+'" data-day="'+k+'" role="button" tabindex="0" aria-label="'+(d.getMonth()+1)+'月'+d.getDate()+'日 '+evs.length+'件"><div class="d"><span>'+d.getDate()+'</span>'+(evs.length?'<span class="c">'+evs.length+'</span>':'')+'</div>';
+    evs.slice(0,3).forEach(function(e){
+      h+='<a class="pill" style="--c:var(--c-'+e.f+')" href="'+esc(safeUrl(e.u))+'" target="_blank" rel="noopener" title="'+esc(e.n)+'">'+esc(e.n)+'</a>';
+    });
+    if(evs.length>3)h+='<div class="morepill">他 '+(evs.length-3)+' 件</div>';
+    if(evs.length){h+='<div class="dots">'+evs.slice(0,6).map(function(e){return '<span class="dot" style="--c:var(--c-'+e.f+')"></span>';}).join('')+'</div>';}
+    h+='</div>';
+  }
+  h+='</div><div class="daylist">';
+  if(selDay&&map[selDay]){
+    var a=parse(selDay);
+    h+='<h3>'+(a.getMonth()+1)+'月'+a.getDate()+'日（'+WD[a.getDay()]+'）の大会 '+map[selDay].length+'件</h3>'+map[selDay].map(evHTML).join('');
+  }else if(selDay){h+='<div class="empty">この日の大会はありません。</div>';}
+  h+='</div>';
+  $('main').innerHTML=h;
+}
+function render(){
+  renderChips();
+  var list=filtered();
+  $('count').textContent=list.length+'件 表示中';
+  $('vList').setAttribute('aria-pressed',st.view==='list');
+  $('vCal').setAttribute('aria-pressed',st.view==='cal');
+  if(st.view==='cal')renderCal(list);else renderList(list);
+  save('gc.view',{view:st.view,field:st.field,sub:st.sub});
+}
+
+/* .ics 書き出し（既存の予定に「追加」する想定。TZID は Asia/Tokyo） */
+function icsEsc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');}
+function fold(l){var out='',n=0,cs=Array.from(l);cs.forEach(function(c){var b=new TextEncoder().encode(c).length;if(n+b>73){out+='\r\n ';n=1;}out+=c;n+=b;});return out;}
+function icsOf(list){
+  var stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  var L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//KURU77//gakkai-calendar//JA','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+   'BEGIN:VTIMEZONE','TZID:Asia/Tokyo','BEGIN:STANDARD','DTSTART:19700101T000000','TZOFFSETFROM:+0900','TZOFFSETTO:+0900','TZNAME:JST','END:STANDARD','END:VTIMEZONE'];
+  list.forEach(function(e){
+    var end=parse(e.e||e.s);end.setDate(end.getDate()+1);
+    L.push('BEGIN:VEVENT','UID:'+e.id+'@gakkai-calendar','DTSTAMP:'+stamp,
+     'DTSTART;VALUE=DATE:'+e.s.replace(/-/g,''),'DTEND;VALUE=DATE:'+ymd(end).replace(/-/g,''),
+     'SUMMARY:'+icsEsc(e.n),'LOCATION:'+icsEsc(e.v),'URL:'+icsEsc(e.u),'DESCRIPTION:'+icsEsc('公式ページ: '+e.u),'END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.map(fold).join('\r\n')+'\r\n';
+}
+function shareIcs(list,name){
+  var text=icsOf(list);
+  var file=new File([text],name,{type:'text/calendar'});
+  function mark(){list.forEach(function(e){exported[e.id]=1;});save('gc.exported',exported);render();}
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file]}).then(mark).catch(function(){});
+    return;
+  }
+  var a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
+  mark();toast('.ics を保存しました');
+}
+function find(id){for(var i=0;i<all.length;i++)if(all[i].id===id)return all[i];return null;}
+
+/* 操作 */
+$('fields').addEventListener('click',function(ev){var b=ev.target.closest('[data-f]');if(!b)return;var f=b.getAttribute('data-f');st.field=(st.field===f)?'':f;st.sub='';shown=PAGE;render();});
+$('subs').addEventListener('click',function(ev){var b=ev.target.closest('[data-s]');if(!b)return;st.sub=b.getAttribute('data-s');shown=PAGE;render();});
+var qt;$('q').addEventListener('input',function(){clearTimeout(qt);var v=this.value.trim();qt=setTimeout(function(){st.q=v;shown=PAGE;render();},150);});
+$('type').addEventListener('change',function(){st.type=this.value;shown=PAGE;render();});
+$('region').addEventListener('change',function(){st.region=this.value;shown=PAGE;render();});
+$('star').addEventListener('change',function(){st.star=this.checked;shown=PAGE;render();});
+$('past').addEventListener('change',function(){st.past=this.checked;shown=PAGE;render();});
+$('vList').addEventListener('click',function(){st.view='list';render();});
+$('vCal').addEventListener('click',function(){st.view='cal';render();});
+$('ics').addEventListener('click',function(){
+  var list=all.filter(function(e){return stars[e.id]&&(e.e||e.s)>=today;});
+  if(!list.length){toast('★を付けた今後の大会がありません');return;}
+  var fresh=list.filter(function(e){return !exported[e.id];});
+  if(!fresh.length){
+    if(!confirm('★の大会はすべて書き出し済みです。もう一度書き出すと予定が重複します。続けますか？'))return;
+    fresh=list;
+  }
+  shareIcs(fresh,'gakkai-calendar.ics');
+});
+$('main').addEventListener('click',function(ev){
+  var t=ev.target,b;
+  if(t.closest('a'))return;
+  if(b=t.closest('[data-star]')){var id=b.getAttribute('data-star');if(stars[id])delete stars[id];else stars[id]=1;save('gc.stars',stars);render();return;}
+  if(b=t.closest('[data-ics]')){
+    var e=find(b.getAttribute('data-ics'));if(!e)return;
+    if(exported[e.id]&&!confirm('この大会は書き出し済みです。もう一度書き出すと予定が重複します。続けますか？'))return;
+    shareIcs([e],'gakkai-event.ics');return;
+  }
+  if(b=t.closest('[data-edit]')){openDlg(find(b.getAttribute('data-edit')));return;}
+  if(t.id==='more'){shown+=PAGE;render();return;}
+  if(t.id==='prev'||t.id==='next'){var d=new Date(cur.y,cur.m+(t.id==='prev'?-1:1),1);cur={y:d.getFullYear(),m:d.getMonth()};selDay=null;render();return;}
+  if(t.id==='thism'){cur={y:now.getFullYear(),m:now.getMonth()};selDay=today;render();return;}
+  if(b=t.closest('[data-day]')){selDay=b.getAttribute('data-day');render();var dl=document.querySelector('.daylist');if(dl&&innerWidth<=680)dl.scrollIntoView({behavior:'smooth',block:'start'});}
+});
+$('main').addEventListener('keydown',function(ev){
+  if((ev.key==='Enter'||ev.key===' ')&&ev.target.hasAttribute&&ev.target.hasAttribute('data-day')){ev.preventDefault();selDay=ev.target.getAttribute('data-day');render();}
+});
+
+/* 自分で追加 */
+var editing=null;
+function openDlg(e){
+  editing=e||null;var f=$('form');f.reset();
+  $('dlgTitle').textContent=e?'大会を編集':'大会を追加';
+  $('dlgDel').hidden=!e;
+  if(e){f.n.value=e.n;f.s.value=e.s;f.e.value=e.e||'';f.u.value=e.u;f.v.value=e.v||'';f.f.value=e.f;}
+  else if(st.field)f.f.value=st.field;
+  $('dlg').showModal();
+}
+$('add').addEventListener('click',function(){openDlg(null);});
+$('dlgCancel').addEventListener('click',function(){$('dlg').close();});
+$('dlgDel').addEventListener('click',function(){
+  if(!editing||!confirm('この大会を削除しますか？'))return;
+  custom=custom.filter(function(c){return c.id!==editing.id;});save('gc.custom',custom);merge();$('dlg').close();render();
+});
+$('form').addEventListener('submit',function(ev){
+  ev.preventDefault();var f=ev.target;
+  var s=f.s.value,e2=f.e.value||s;
+  if(e2<s){toast('終了日が開始日より前です');return;}
+  if(!/^https?:\/\//i.test(f.u.value)){toast('URLは http から始めてください');return;}
+  var rec={id:editing?editing.id:'c'+Date.now().toString(36),n:f.n.value.trim(),s:s,e:e2,u:f.u.value.trim(),v:f.v.value.trim(),f:f.f.value};
+  if(editing)custom=custom.map(function(c){return c.id===rec.id?rec:c;});else custom.push(rec);
+  save('gc.custom',custom);merge();$('dlg').close();render();toast('保存しました');
+});
+
+/* 初期化 */
+$('type').innerHTML='<option value="">種別：すべて</option>'+TYPES.map(function(t){return '<option>'+t+'</option>';}).join('');
+$('region').innerHTML='<option value="">地域：すべて</option>'+REGIONS.map(function(t){return '<option>'+t+'</option>';}).join('');
+$('dlgField').innerHTML=FIELDS.map(function(f){return '<option value="'+f[0]+'">'+f[1]+'</option>';}).join('');
+fetch('events.json').then(function(r){return r.json();}).then(function(j){
+  data=j.events;merge();
+  $('updated').textContent='データ更新日：'+j.updated+'／収録 '+j.events.length+' 件';
+  render();
+}).catch(function(){$('main').innerHTML='<div class="empty">データを読み込めませんでした。通信状態を確認してください。</div>';});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>
