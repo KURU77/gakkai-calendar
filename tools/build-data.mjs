@@ -289,7 +289,7 @@ const addSoc = (n, u, src) => {
   socSeen.set(h, { n: name, u, f, sf });
 };
 for (const [n, u] of read('jams_soc')) addSoc(n, u, 'igaku');
-for (const [n, u, st, ok] of [...read('crawl3_status'), ...read('crawl4_status')]) if (st === 200 && ok) addSoc(n, u, '');
+for (const [n, u] of JSON.parse(fs.readFileSync(path.join(here, 'societies-seed.json'), 'utf8'))) addSoc(n, u, '');
 const societies = [...socSeen.values()].sort((a, b) => a.n.localeCompare(b.n, 'ja'));
 console.log('societies', societies.length, societies.reduce((m, e) => ((m[e.f] = (m[e.f] || 0) + 1), m), {}));
 

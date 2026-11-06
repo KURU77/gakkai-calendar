@@ -47,13 +47,24 @@ iPhone では Safari で開き、「ホーム画面に追加」するとアプ�
 
 ## データの更新
 
+`.cache/` を保存先にして実行します。
+
 ```bash
-node tools/harvest.mjs <保存先フォルダ>
-node tools/harvest-extra.mjs <保存先フォルダ>
-node tools/build-data.mjs <保存先フォルダ>
+node tools/harvest.mjs .cache kagaku
+node tools/harvest.mjs .cache igaku
+node tools/harvest.mjs .cache saisachi
+node tools/harvest-extra.mjs .cache
+node tools/harvest-jams.mjs .cache
+node tools/crawl-societies.mjs .cache
 ```
 
-`build-data.mjs` が除外、分野判定、重複の統合を行い、`events.json` を書き出します。
+`crawl-societies.mjs` は、`tools/societies-seed.json` の学会サイトを巡回し、未収録の候補を `.cache/review.txt` に出します。自動抽出には締切日などの誤りが混ざるので、文脈を読んで正しいものだけ `tools/curated.json` に追加します。
+
+```bash
+node tools/build-data.mjs .cache
+node tools/check-links.mjs .cache
+node tools/build-data.mjs .cache
+```
 
 動作確認は `node tools/serve.mjs` で起動し、http://localhost:8790/ を開きます。
 
