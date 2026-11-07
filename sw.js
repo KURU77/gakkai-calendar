@@ -1,6 +1,6 @@
 /* 学会大会カレンダー — オフライン用サービスワーカー
    HTML と events.json はネットワーク優先（更新をすぐ反映）、それ以外はキャッシュ優先。 */
-var CACHE = 'gakkai-calendar-v2';
+var CACHE = 'gakkai-calendar-v3';
 var ASSETS = [
   './',
   './index.html',

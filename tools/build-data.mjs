@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { refine } from './taxonomy.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dir = process.argv[2];
@@ -53,7 +54,7 @@ const RULES = [
   ['edu', '心理学', /心理|認知科学|行動分析|カウンセリング|発達障害|臨床動作|感情/],
   ['edu', 'スポーツ', /体育|スポーツ|運動学|武道|ダンス|(?<!流)体力/],
   ['edu', '教育学', /教育工学|教育学|教育方法|教育社会|教科教育|保育|特殊教育|特別支援|科学教育|理科教育|数学教育|語教育|英語教育|大学教育|高等教育|工学教育|教師|教職|学校|カリキュラム|美術科教育/],
-  ['soc', '法学', /(?<![療方技手航替])法学|法哲学|法社会|私法|公法|刑法|民事訴訟|労働法/],
+  ['soc', '法学', /(?<![療方技手航替文])法学|法哲学|法社会|私法|公法|刑法|民事訴訟|労働法/],
   ['soc', '政治・国際', /政治学|国際政治|行政学|国際関係|公共政策|国際開発|平和学/],
   ['soc', '経済学', /経済学|経済理論|金融学|財政|行動経済|環境経済|農業経済|計量経済/],
   ['soc', '経営・会計', /経営|会計|マーケティング|組織学会|商業|ファイナンス|労務|観光/],
@@ -128,6 +129,10 @@ function classifyText(text, medical) {
   return byRules(text, (f) => !FIRST.has(f)) || (medical ? byMed(text) : null);
 }
 function classify(name, org, src, area) {
+  const [f, sf] = classifyBase(name, org, src, area);
+  return refine(f, sf, z2h(`${name} ${org || ''}`));
+}
+function classifyBase(name, org, src, area) {
   const medical = src === 'igaku' || area === '医学関連';
   const r = classifyText(name, medical) || (org ? classifyText(org, medical) : null);
   if (r) return r;
@@ -140,6 +145,7 @@ function classify(name, org, src, area) {
   if (medical || STRONG_MED.test(name) || /健康学会/.test(name)) return ['med', 'その他の医学'];
   if (src === 'saisachi') return ['life', '生物学'];
   if (src === 'jps') return ['sci', '物理学'];
+  if (src === 'yuhikaku') return ['soc', '法学'];
   if (src === 'kuroshio') return ['hum', '言語・文学'];
   if (src === 'kagaku' || area === '理学・工学') return ['eng', 'その他の工学'];
   return ['soc', 'その他'];
@@ -227,6 +233,7 @@ const sources = [
   read('igaku').map((e) => ({ ...e, name: clean(e.name), startOnly: true })),
   read('saisachi'),
   read('kuroshio'),
+  read('yuhikaku'),
   read('jps'),
   read('kagaku'),
   read('kore').map(parseKore).filter(Boolean),
@@ -260,7 +267,7 @@ for (const list of sources) for (const raw of list) {
 }
 const events = kept.map((e) => {
   const text = z2h(`${e.name} ${e.org || ''}`);
-  const [f, sf] = classify(z2h(e.name), z2h(e.org), e.src === 'jams' ? 'igaku' : e.src, e.area);
+  const [f, sf] = e.src === 'yuhikaku' ? refine('soc', /政治|行政/.test(e.org) && !/法/.test(e.org) ? '政治・国際' : /EU|経済|交渉/.test(e.org) && !/法/.test(e.org) ? '政治・国際' : '法学', z2h(e.name)) : classify(z2h(e.name), z2h(e.org), e.src === 'jams' ? 'igaku' : e.src, e.area);
   let u = e.url, l = '';
   if (!/^https?:\/\//.test(u || '')) {
     u = societyUrl(text);
@@ -282,7 +289,7 @@ const socSeen = new Map();
 const addSoc = (n, u, src) => {
   const name = clean(z2h(n).replace(/^(一般|公益)(社団|財団)法人\s*|^特定非営利活動法人\s*|^NPO法人\s*/, ''));
   if (!/(学会|協会|学協会|研究会|学会連合)$/.test(name) || /^第?\d|^(日本)?学術会議/.test(name) || name.length < 4) return;
-  if (/創価学会|サザエさん|うんこ|もったいない|BPCNP|ブレインサイエンス協会/.test(name)) return;
+  if (/創価学会|サザエさん|うんこ|もったいない|BPCNP|ブレインサイエンス協会|ナポリタン|路上観察/.test(name)) return;
   const h = hostOf(u);
   if (!h || socSeen.has(h) || [...socSeen.values()].some((x) => x.n === name)) return;
   const [f, sf] = classify(name, '', src, '');

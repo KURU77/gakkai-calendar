@@ -16,15 +16,13 @@
 :root{
   --bg:#F6F4EE; --panel:#FFFFFF; --ink:#1D2433; --sub:#5C6474; --line:#DEDACF; --soft:#ECE9E0;
   --accent:#1F4E79; --accent-ink:#FFFFFF; --star:#B7791F; --today:#FBE9C6;
-  --c-med:#B4403A; --c-dent:#C2628A; --c-pharm:#8A5A2B; --c-nurse:#D0703C; --c-life:#3F7D4E;
-  --c-sci:#2C6E9B; --c-eng:#4C5C8C; --c-info:#6B4FA0; --c-hum:#8C6D1F; --c-soc:#1E7C7C; --c-edu:#A0527E;
+  --c-health:#B4403A; --c-life:#3F7D4E; --c-sci:#2C6E9B; --c-tech:#4C5C8C; --c-hum:#8C6D1F; --c-socsci:#1E7C7C; --c-edu:#A0527E;
 }
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#16181D; --panel:#1F2228; --ink:#E9E7E1; --sub:#A2A7B3; --line:#343842; --soft:#2A2E36;
     --accent:#7FB2DE; --accent-ink:#10202F; --star:#E5B45A; --today:#4A3D1E;
-    --c-med:#E58A84; --c-dent:#E59CBB; --c-pharm:#CFA478; --c-nurse:#EBA77F; --c-life:#85C795;
-    --c-sci:#7DB9E0; --c-eng:#A3B1DE; --c-info:#BBA3E6; --c-hum:#D9BE6E; --c-soc:#74C7C7; --c-edu:#DDA0C4;
+    --c-health:#E58A84; --c-life:#85C795; --c-sci:#7DB9E0; --c-tech:#A3B1DE; --c-hum:#D9BE6E; --c-socsci:#74C7C7; --c-edu:#DDA0C4;
   }
 }
 *{box-sizing:border-box}
@@ -79,6 +77,14 @@ main{padding:12px 0 40px}
 .soc{padding:7px 2px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--soft);font-size:14px}
 .soc:hover{color:var(--accent);text-decoration:underline}
 .empty{padding:50px 10px;text-align:center;color:var(--sub)}
+.groups .chip{font-weight:600}
+details.adv{border-bottom:1px solid var(--line);padding:6px 0 10px}
+details.adv summary{cursor:pointer;font-size:14px;color:var(--accent);padding:4px 0;width:max-content}
+.advgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px 16px;margin-top:8px}
+.advgrid label{display:grid;gap:3px;font-size:12.5px;color:var(--sub)}
+.advgrid input[type=date],.advgrid select{padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);width:100%}
+.advgrid label.check{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:13.5px;margin:4px 0}
+.advnote{font-size:12.5px;color:var(--sub);margin:8px 0 0}
 /* 月表示 */
 .calhead{display:flex;align-items:center;gap:8px;margin:6px 0 10px}
 .calhead h2{font:600 19px/1.3 "Hiragino Mincho ProN","Yu Mincho",serif;margin:0 6px}
@@ -90,7 +96,7 @@ main{padding:12px 0 40px}
 .day.sel{outline:2px solid var(--accent);outline-offset:-2px}
 .day .d{font-size:12.5px;font-variant-numeric:tabular-nums;display:flex;justify-content:space-between;padding:0 2px}
 .day .d .c{color:var(--sub);font-size:11px}
-.sun .d>span:first-child{color:var(--c-med)} .sat .d>span:first-child{color:var(--c-sci)}
+.sun .d>span:first-child{color:var(--c-health)} .sat .d>span:first-child{color:var(--c-sci)}
 .pill{display:block;font-size:11.5px;line-height:1.35;padding:1px 4px 1px 6px;margin-top:2px;border-left:3px solid var(--c);background:var(--soft);border-radius:2px;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill:hover{background:var(--line)}
 .morepill{font-size:11px;color:var(--accent);padding:1px 4px}
@@ -129,9 +135,10 @@ footer p{margin:4px 0}
       <span class="count" id="count"></span>
     </div>
     <div class="searchrow">
-      <input id="q" type="search" placeholder="学会名・大会名・会場で検索" aria-label="学会名・大会名・会場で検索">
+      <input id="q" type="search" placeholder="学会名・大会名・会場・分野で検索" aria-label="学会名・大会名・会場・分野で検索">
       <button class="btn" id="add">＋追加</button>
     </div>
+    <div class="chips groups" id="groups" role="group" aria-label="分野グループ"></div>
     <div class="chips" id="fields" role="group" aria-label="分野"></div>
     <div class="chips sub" id="subs" role="group" aria-label="細分野" hidden></div>
     <div class="bar">
@@ -145,6 +152,19 @@ footer p{margin:4px 0}
       <span class="spacer"></span>
       <button class="btn" id="ics" title="★を付けた大会をカレンダーへ">★をカレンダーへ</button>
     </div>
+    <details class="adv" id="adv">
+      <summary>詳しく検索</summary>
+      <div class="advgrid">
+        <label>開始日がこの日以降<input type="date" id="from"></label>
+        <label>開始日がこの日以前<input type="date" id="to"></label>
+        <label>並び順<select id="sort"><option value="date">開催日が近い順</option><option value="name">名前順</option><option value="field">分野順</option></select></label>
+        <div>
+          <label class="check"><input type="checkbox" id="official"> 大会ページへ直接飛べるものだけ</label>
+          <label class="check"><input type="checkbox" id="endknown"> 終了日まで分かるものだけ</label>
+        </div>
+      </div>
+      <p class="advnote">検索語はスペース区切りですべてを含むもの、「A|B」でどちらか、「-語」でその語を除外します（例：「宇宙|天文 -シンポジウム」）。<button class="btn" type="button" id="reset" style="margin-left:8px;padding:4px 10px">条件をすべて解除</button></p>
+    </details>
   </header>
   <main id="main"></main>
   <footer>
@@ -178,11 +198,19 @@ footer p{margin:4px 0}
 <script>
 (function(){
 'use strict';
+var GROUPS=[['health','医療・健康'],['life','生命・農・食'],['sci','理学・宇宙・地球'],['tech','工学・情報'],['hum','人文学'],['socsci','社会科学'],['edu','教育・心理']];
 var FIELDS=[
- ['med','医学・医療'],['dent','歯学'],['pharm','薬学'],['nurse','看護・医療技術'],['life','生命科学・農学'],
- ['sci','理学'],['eng','工学'],['info','情報・AI'],['hum','人文学'],['soc','社会科学'],['edu','教育・心理・スポーツ']
+ ['med','医学・医療','health'],['dent','歯学','health'],['pharm','薬学','health'],['nurse','看護・医療技術','health'],['sport','スポーツ・健康','health'],
+ ['bio','生物学・生命科学','life'],['neuro','脳・神経科学','life'],['agri','農学・獣医・水産','life'],['food','食品・栄養','life'],
+ ['math','数学・統計','sci'],['phys','物理学','sci'],['chem','化学','sci'],['space','宇宙・天文・航空','sci'],['earth','地球・環境・防災','sci'],
+ ['eng','機械・電気・材料','tech'],['build','建築・土木','tech'],['energy','エネルギー・原子力','tech'],['info','情報・AI','tech'],
+ ['hum','人文学','hum'],
+ ['law','法学・政治','socsci'],['econ','経済学','socsci'],['biz','商学・経営・会計','socsci'],['soc','社会学・福祉・地理','socsci'],
+ ['edu','教育','edu'],['psy','心理学','edu']
 ];
-var FNAME={}; FIELDS.forEach(function(f){FNAME[f[0]]=f[1];});
+var FNAME={},FGROUP={}; FIELDS.forEach(function(f){FNAME[f[0]]=f[1];FGROUP[f[0]]=f[2];});
+var OLDF={life:'bio',sci:'phys'};
+function col(f){return 'var(--c-'+(FGROUP[f]||'sci')+')';}
 var TYPES=['全国大会','地方会・支部','研究会・シンポジウム','国際会議'];
 var REGIONS=['北海道・東北','関東','中部','近畿','中国・四国','九州・沖縄','オンライン'];
 var WD=['日','月','火','水','木','金','土'];
@@ -193,7 +221,9 @@ function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
 var stars=load('gc.stars',{}), exported=load('gc.exported',{}), custom=load('gc.custom',[]);
 var st=load('gc.view',{view:'list',field:'',sub:''});
-st.q='';st.type='';st.region='';st.star=false;st.past=false;
+if(!FNAME[st.field]){st.field='';st.sub='';}
+if(!st.group||!GROUPS.some(function(g){return g[0]===st.group;}))st.group=st.field?FGROUP[st.field]:'';
+st.q='';st.type='';st.region='';st.star=false;st.past=false;st.from='';st.to='';st.official=false;st.endknown=false;st.sort='date';
 var data=[], all=[], socs=[], shown=PAGE;
 var now=new Date();
 var today=ymd(now);
@@ -216,51 +246,69 @@ function dateLabel(e){
 function toast(m){var o=document.querySelector('.toast');if(o)o.remove();var t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove();},2600);}
 
 function merge(){
-  all=data.concat(custom.map(function(c){return Object.assign({mine:1,t:'全国大会',sf:'',r:''},c);}));
+  all=data.concat(custom.map(function(c){var o=Object.assign({mine:1,t:'全国大会',sf:'',r:''},c);if(!FNAME[o.f])o.f=OLDF[o.f]||'soc';return o;}));
   all.sort(function(a,b){return a.s<b.s?-1:a.s>b.s?1:(a.n<b.n?-1:1);});
 }
 function baseFilter(e){
   if(st.type&&e.t!==st.type)return false;
   if(st.region&&e.r!==st.region)return false;
   if(st.star&&!stars[e.id])return false;
-  if(st.q){
-    var hay=(e.n+' '+(e.o||'')+' '+(e.v||'')+' '+(e.sf||'')).toLowerCase();
-    var ws=st.q.toLowerCase().split(/\s+/);
-    for(var i=0;i<ws.length;i++) if(ws[i]&&hay.indexOf(ws[i])<0) return false;
+  if(st.from&&e.s<st.from)return false;
+  if(st.to&&e.s>st.to)return false;
+  if(st.official&&e.l)return false;
+  if(st.endknown&&e.x)return false;
+  return match(e.n+' '+(e.o||'')+' '+(e.v||'')+' '+(e.sf||'')+' '+(FNAME[e.f]||''));
+}
+function match(text){
+  if(!st.q)return true;
+  var hay=text.toLowerCase(),ws=st.q.toLowerCase().replace(/[｜]/g,'|').split(/[\s　]+/);
+  for(var i=0;i<ws.length;i++){
+    var w=ws[i];if(!w||w==='-')continue;
+    if(w.charAt(0)==='-'||w.charAt(0)==='－'){if(hay.indexOf(w.slice(1))>=0)return false;continue;}
+    var any=w.split('|').filter(Boolean);
+    if(any.length&&!any.some(function(x){return hay.indexOf(x)>=0;}))return false;
   }
   return true;
 }
-function timeOk(e){return st.past||st.view==='cal'||(e.e||e.s)>=today;}
-function filtered(){
-  return all.filter(function(e){
-    if(st.field&&e.f!==st.field)return false;
-    if(st.sub&&e.sf!==st.sub)return false;
-    return timeOk(e)&&baseFilter(e);
-  });
-}
-
-function socOk(e){
-  if(!st.q)return true;
-  var hay=(e.n+' '+e.sf).toLowerCase(),ws=st.q.toLowerCase().split(/\s+/);
-  for(var i=0;i<ws.length;i++)if(ws[i]&&hay.indexOf(ws[i])<0)return false;
+function inScope(e){
+  if(st.field)return e.f===st.field&&(!st.sub||e.sf===st.sub);
+  if(st.group)return FGROUP[e.f]===st.group;
   return true;
 }
+function sortList(list){
+  if(st.sort==='name')return list.slice().sort(function(a,b){return a.n.localeCompare(b.n,'ja');});
+  if(st.sort==='field'){var ord={};FIELDS.forEach(function(f,i){ord[f[0]]=i;});return list.slice().sort(function(a,b){return (ord[a.f]-ord[b.f])||((a.sf||'')<(b.sf||'')?-1:(a.sf||'')>(b.sf||'')?1:0)||(a.s<b.s?-1:a.s>b.s?1:0);});}
+  return list;
+}
+function timeOk(e){return st.past||st.view==='cal'||(e.e||e.s)>=today;}
+function filtered(){
+  return sortList(all.filter(function(e){return inScope(e)&&timeOk(e)&&baseFilter(e);}));
+}
+
+function socOk(e){return match(e.n+' '+e.sf+' '+(FNAME[e.f]||''));}
 function socFiltered(){
-  return socs.filter(function(e){return socOk(e)&&(!st.field||e.f===st.field)&&(!st.sub||e.sf===st.sub);});
+  return socs.filter(function(e){return socOk(e)&&inScope(e);});
 }
 function renderChips(){
   var pool=st.view==='soc'?socs.filter(socOk):all.filter(function(e){return timeOk(e)&&baseFilter(e);});
-  var cnt={},total=pool.length; pool.forEach(function(e){cnt[e.f]=(cnt[e.f]||0)+1;});
-  var h='<button class="chip" data-f="" aria-pressed="'+(!st.field)+'">すべて <span class="n">'+total+'</span></button>';
+  var cnt={},gc={},total=pool.length; pool.forEach(function(e){cnt[e.f]=(cnt[e.f]||0)+1;gc[FGROUP[e.f]]=(gc[FGROUP[e.f]]||0)+1;});
+  var g='<button class="chip" data-g="" aria-pressed="'+(!st.group)+'">すべて <span class="n">'+total+'</span></button>';
+  GROUPS.forEach(function(x){
+    g+='<button class="chip" data-g="'+x[0]+'" aria-pressed="'+(st.group===x[0])+'"><span class="dot" style="--c:var(--c-'+x[0]+')"></span>'+x[1]+' <span class="n">'+(gc[x[0]]||0)+'</span></button>';
+  });
+  $('groups').innerHTML=g;
+  var h='';
   FIELDS.forEach(function(f){
-    h+='<button class="chip" data-f="'+f[0]+'" aria-pressed="'+(st.field===f[0])+'"><span class="dot" style="--c:var(--c-'+f[0]+')"></span>'+f[1]+' <span class="n">'+(cnt[f[0]]||0)+'</span></button>';
+    if(st.group&&f[2]!==st.group)return;
+    h+='<button class="chip" data-f="'+f[0]+'" aria-pressed="'+(st.field===f[0])+'"><span class="dot" style="--c:'+col(f[0])+'"></span>'+f[1]+' <span class="n">'+(cnt[f[0]]||0)+'</span></button>';
   });
   $('fields').innerHTML=h;
+  var ong=$('groups').querySelector('[aria-pressed=true]');if(ong)$('groups').scrollLeft=Math.max(0,ong.offsetLeft-$('groups').offsetLeft-16);
   var on=$('fields').querySelector('[aria-pressed=true]');if(on)$('fields').scrollLeft=Math.max(0,on.offsetLeft-$('fields').offsetLeft-16);
   var sub=$('subs');
   if(!st.field){sub.hidden=true;sub.innerHTML='';return;}
   var sc={}; pool.forEach(function(e){if(e.f===st.field&&e.sf)sc[e.sf]=(sc[e.sf]||0)+1;});
-  var keys=Object.keys(sc).sort(function(a,b){return sc[b]-sc[a];});
+  var keys=Object.keys(sc).sort(function(a,b){return (a==='その他')-(b==='その他')||sc[b]-sc[a];});
   if(!keys.length){sub.hidden=true;sub.innerHTML='';return;}
   sub.hidden=false;
   sub.innerHTML='<button class="chip" data-s="" aria-pressed="'+(!st.sub)+'">全部</button>'+keys.map(function(k){
@@ -271,7 +319,7 @@ function renderChips(){
 function evHTML(e){
   var isStar=!!stars[e.id];
   var meta=[];
-  meta.push('<span class="tag"><span class="dot" style="--c:var(--c-'+e.f+')"></span>'+esc(e.sf||FNAME[e.f]||'')+'</span>');
+  meta.push('<span class="tag"><span class="dot" style="--c:'+col(e.f)+'"></span>'+esc(FNAME[e.f]||'')+(e.sf&&e.sf!=='その他'&&e.sf!==FNAME[e.f]?'／'+esc(e.sf):'')+'</span>');
   if(e.t&&e.t!=='全国大会')meta.push('<span>'+esc(e.t)+'</span>');
   if(e.v)meta.push('<span>'+esc(e.v)+'</span>');
   if(e.l==='s')meta.push('<span class="linkkind">学会サイトへ移動（大会ページは未確認）</span>');
@@ -288,8 +336,8 @@ function renderList(list){
   if(!list.length){$('main').innerHTML='<div class="empty">条件に合う大会はありません。<br>絞り込みを減らすか、「＋追加」で登録してください。</div>';return;}
   var h='',last='';
   list.slice(0,shown).forEach(function(e){
-    var m=e.s.slice(0,7);
-    if(m!==last){last=m;h+='<div class="month-h">'+m.slice(0,4)+'年'+(+m.slice(5))+'月</div>';}
+    var m=st.sort==='date'?e.s.slice(0,4)+'年'+(+e.s.slice(5,7))+'月':st.sort==='field'?(FNAME[e.f]||'')+(e.sf&&e.sf!=='その他'?'／'+e.sf:''):'';
+    if(m&&m!==last){last=m;h+='<div class="month-h">'+esc(m)+'</div>';}
     h+=evHTML(e);
   });
   if(list.length>shown)h+='<button class="btn more" id="more">さらに表示（残り '+(list.length-shown)+' 件）</button>';
@@ -298,8 +346,9 @@ function renderList(list){
 function renderSoc(list){
   if(!list.length){$('main').innerHTML='<div class="empty">条件に合う学会はありません。</div>';return;}
   var g={},order=[];
+  var ord={};FIELDS.forEach(function(f,i){ord[f[1]]=i;});
   list.forEach(function(e){var k=(FNAME[e.f]||'')+(e.sf&&e.sf!==FNAME[e.f]?'／'+e.sf:'');if(!g[k]){g[k]=[];order.push(k);}g[k].push(e);});
-  order.sort();
+  order.sort(function(a,b){return (ord[a.split('／')[0]]-ord[b.split('／')[0]])||(/その他$/.test(a)-/その他$/.test(b))||(a<b?-1:1);});
   $('main').innerHTML='<p class="note">大会日程が未発表、または未収録の学会も探せる一覧です。学会名を押すと公式サイトが開きます。</p>'+order.map(function(k){
     return '<div class="month-h">'+esc(k)+'（'+g[k].length+'）</div><div class="socgrid">'+g[k].map(function(e){
       return '<a class="soc" href="'+esc(safeUrl(e.u))+'" target="_blank" rel="noopener">'+esc(e.n)+' ↗</a>';
@@ -329,10 +378,10 @@ function renderCal(list){
     var cls='day'+(d.getMonth()!==cur.m?' out':'')+(k===today?' today':'')+(k===selDay?' sel':'')+(d.getDay()===0?' sun':d.getDay()===6?' sat':'');
     h+='<div class="'+cls+'" data-day="'+k+'" role="button" tabindex="0" aria-label="'+(d.getMonth()+1)+'月'+d.getDate()+'日 '+evs.length+'件"><div class="d"><span>'+d.getDate()+'</span>'+(evs.length?'<span class="c">'+evs.length+'</span>':'')+'</div>';
     evs.slice(0,3).forEach(function(e){
-      h+='<a class="pill" style="--c:var(--c-'+e.f+')" href="'+esc(safeUrl(e.u))+'" target="_blank" rel="noopener" title="'+esc(e.n)+'">'+esc(e.n)+'</a>';
+      h+='<a class="pill" style="--c:'+col(e.f)+'" href="'+esc(safeUrl(e.u))+'" target="_blank" rel="noopener" title="'+esc(e.n)+'">'+esc(e.n)+'</a>';
     });
     if(evs.length>3)h+='<div class="morepill">他 '+(evs.length-3)+' 件</div>';
-    if(evs.length){h+='<div class="dots">'+evs.slice(0,6).map(function(e){return '<span class="dot" style="--c:var(--c-'+e.f+')"></span>';}).join('')+'</div>';}
+    if(evs.length){h+='<div class="dots">'+evs.slice(0,6).map(function(e){return '<span class="dot" style="--c:'+col(e.f)+'"></span>';}).join('')+'</div>';}
     h+='</div>';
   }
   h+='</div><div class="daylist">';
@@ -352,7 +401,8 @@ function render(){
   $('vList').setAttribute('aria-pressed',st.view==='list');
   $('vCal').setAttribute('aria-pressed',st.view==='cal');
   if(st.view==='soc')renderSoc(list);else if(st.view==='cal')renderCal(list);else renderList(list);
-  save('gc.view',{view:st.view,field:st.field,sub:st.sub});
+  save('gc.view',{view:st.view,group:st.group,field:st.field,sub:st.sub});
+  ['from','to','sort','official','endknown'].forEach(function(id){$(id).disabled=st.view==='soc';});
 }
 
 /* .ics 書き出し（既存の予定に「追加」する想定。TZID は Asia/Tokyo） */
@@ -386,7 +436,17 @@ function shareIcs(list,name){
 function find(id){for(var i=0;i<all.length;i++)if(all[i].id===id)return all[i];return null;}
 
 /* 操作 */
-$('fields').addEventListener('click',function(ev){var b=ev.target.closest('[data-f]');if(!b)return;var f=b.getAttribute('data-f');st.field=(st.field===f)?'':f;st.sub='';shown=PAGE;render();});
+$('groups').addEventListener('click',function(ev){var b=ev.target.closest('[data-g]');if(!b)return;var g=b.getAttribute('data-g');st.group=(st.group===g)?'':g;st.field='';st.sub='';shown=PAGE;render();});
+$('fields').addEventListener('click',function(ev){var b=ev.target.closest('[data-f]');if(!b)return;var f=b.getAttribute('data-f');st.field=(st.field===f)?'':f;if(st.field)st.group=FGROUP[f];st.sub='';shown=PAGE;render();});
+['from','to'].forEach(function(id){$(id).addEventListener('change',function(){st[id]=this.value;shown=PAGE;render();});});
+$('sort').addEventListener('change',function(){st.sort=this.value;shown=PAGE;render();});
+$('official').addEventListener('change',function(){st.official=this.checked;shown=PAGE;render();});
+$('endknown').addEventListener('change',function(){st.endknown=this.checked;shown=PAGE;render();});
+$('reset').addEventListener('click',function(){
+  st.q='';st.group='';st.field='';st.sub='';st.type='';st.region='';st.star=false;st.past=false;st.from='';st.to='';st.official=false;st.endknown=false;st.sort='date';
+  $('q').value='';$('type').value='';$('region').value='';$('star').checked=false;$('past').checked=false;$('from').value='';$('to').value='';$('official').checked=false;$('endknown').checked=false;$('sort').value='date';
+  shown=PAGE;render();
+});
 $('subs').addEventListener('click',function(ev){var b=ev.target.closest('[data-s]');if(!b)return;st.sub=b.getAttribute('data-s');shown=PAGE;render();});
 var qt;$('q').addEventListener('input',function(){clearTimeout(qt);var v=this.value.trim();qt=setTimeout(function(){st.q=v;shown=PAGE;render();},150);});
 $('type').addEventListener('change',function(){st.type=this.value;shown=PAGE;render();});
@@ -454,7 +514,7 @@ $('form').addEventListener('submit',function(ev){
 /* 初期化 */
 $('type').innerHTML='<option value="">種別：すべて</option>'+TYPES.map(function(t){return '<option>'+t+'</option>';}).join('');
 $('region').innerHTML='<option value="">地域：すべて</option>'+REGIONS.map(function(t){return '<option>'+t+'</option>';}).join('');
-$('dlgField').innerHTML=FIELDS.map(function(f){return '<option value="'+f[0]+'">'+f[1]+'</option>';}).join('');
+$('dlgField').innerHTML=GROUPS.map(function(g){return '<optgroup label="'+g[1]+'">'+FIELDS.filter(function(f){return f[2]===g[0];}).map(function(f){return '<option value="'+f[0]+'">'+f[1]+'</option>';}).join('')+'</optgroup>';}).join('');
 fetch('events.json').then(function(r){return r.json();}).then(function(j){
   data=j.events;socs=j.societies||[];merge();
   $('updated').textContent='データ更新日：'+j.updated+'／大会 '+j.events.length+' 件・学会 '+socs.length+' 件';

@@ -11,7 +11,7 @@ async function get(u){ try{ const r=await fetch(u,{...UA,signal:AbortSignal.time
 const links=(html,base)=>{const o=[];for(const m of html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi)){let u;try{u=new URL(m[1].replace(/&amp;/g,'&'),base).href}catch{continue} if(!/^https?:/.test(u))continue; o.push({u,a:strip(m[2]).trim()});}return o;};
 const host=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch{return ''}};
 const SEED=new URL('./societies-seed.json',import.meta.url);
-const list=JSON.parse(fs.readFileSync(SEED,'utf8')).slice(0,+process.env.LIMIT||undefined); console.log('targets',list.length);
+const list=(process.env.SEED?JSON.parse(fs.readFileSync(process.env.SEED,'utf8')):JSON.parse(fs.readFileSync(SEED,'utf8'))).slice(0,+process.env.LIMIT||undefined); console.log('targets',list.length);
 const TODAY=new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Tokyo'}); const LAST=(+TODAY.slice(0,4)+2)+'-12-31';
 const KW=/大会|年次|学術集会|年会|総会|研究発表|講演会|学術講演|例会|行事|イベント|会合|催し|シンポジウム|meeting|conference|annual/i;
 const DATE=/(20\d\d|令和\s*\d+)\s*[年./]\s*(\d{1,2})\s*[月./]\s*(\d{1,2})\s*日?\s*(?:[（(][^）)]{1,6}[）)])?\s*(?:[-‐―−–~～〜ー・、,]|から)?\s*(?:(?:(20\d\d)\s*年\s*)?(?:(\d{1,2})\s*月\s*)?(\d{1,2})\s*日?)?/g;
